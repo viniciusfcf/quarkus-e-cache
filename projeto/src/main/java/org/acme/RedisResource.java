@@ -1,7 +1,6 @@
 package org.acme;
 
 import java.util.Arrays;
-import java.util.Random;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -14,14 +13,15 @@ import io.quarkus.redis.client.RedisClient;
 import io.quarkus.redis.client.reactive.ReactiveRedisClient;
 
 
-//1. Injetar o cache @Inject @Remote("myCache") RemoteCache<String, String> cache;
-//2. Criar o cache no infinispan
-//3. Utilizar o remoteCache
-//4. Mostrar estatísticas
-//5. Adicionar Listener (Create, modified, expired)
-//6. Query e ContinuousQuery
+//1. Injetar @Inject RedisClient e ReactiveRedisClient (apresentei somente o blocante)
+//2. Setar um int, fazer increment, transformar em String, tentar fazer incremento e tomar erro
+//3. Falar de expire
+//4. Falar de Hash
+//5. Falar do pub sub, mais como um message broker
+//     reactiveRedisClient.subscribe(null).subscribe().with
+//6. https://redis.io/commands
 
-@Path("/hello")
+@Path("/redis")
 public class RedisResource {
 
     @Inject
@@ -29,16 +29,30 @@ public class RedisResource {
 
     @Inject
     ReactiveRedisClient reactiveRedisClient;
+    
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String set(@QueryParam("key")String key, @QueryParam("value") String value) {
+        redisClient.set(Arrays.asList(key, value));
+        return "Hello RESTEasy: " + redisClient.get(key) ;
+    }
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    @Path("redis")
-    public String hello(@QueryParam("key")String key) {
-        //https://redis.io/commands
-        int nextInt = new Random().nextInt();
-        String value = "value" + nextInt;
-        redisClient.set(Arrays.asList(key, value.toString()));
-        redisClient.set(Arrays.asList(key + nextInt, value.toString()));
+    @Path("incr")
+    public String incr(@QueryParam("key")String key) {
+        redisClient.incr(key);
         return "Hello RESTEasy: key: "+key+" value: "+redisClient.get(key);
     }
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("lpush")
+    public String lpush(@QueryParam("key")String key, @QueryParam("value") String value) {
+        redisClient.lpush(Arrays.asList(key, value));
+        //retorna toda a lista, se fizer get, toma erro!
+        return "Hello RESTEasy: key: "+key+" value: "+redisClient.lrange(key, "0", "-1");
+    }
+
+
 }

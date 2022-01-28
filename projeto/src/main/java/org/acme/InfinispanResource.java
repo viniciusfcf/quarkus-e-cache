@@ -18,11 +18,12 @@ import io.quarkus.runtime.StartupEvent;
 
 
 //1. Injetar o cache @Inject @Remote("myCache") RemoteCache<String, String> cache;
-//2. Criar o cache no infinispan
-//3. Utilizar o remoteCache
-//4. Mostrar estatísticas
+//2. Criar o cache na console web do infinispan
+//3. Utilizar o remoteCache: fazer um put, get
+//4. Mostrar estatísticas na console web
 //5. Adicionar Listener (Create, modified, expired)
-//6. Query e ContinuousQuery
+//6. Falar sobre o Protobuf
+//7. Falar sobre Query e ContinuousQuery
 
 @Path("/hello")
 public class InfinispanResource {
@@ -32,7 +33,7 @@ public class InfinispanResource {
 
     void onStart(@Observes StartupEvent ev) {   
         System.out.println("GreetingResource.onStart()");            
-        cache.addClientListener(new InfinispanListener());
+        // cache.addClientListener(new InfinispanListener());
     }
     @GET
     @Produces(MediaType.TEXT_PLAIN)
