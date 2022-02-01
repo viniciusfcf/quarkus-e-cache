@@ -1,5 +1,6 @@
 package org.acme;
 
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -13,7 +14,9 @@ import javax.ws.rs.core.MediaType;
 
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
+import org.infinispan.client.hotrod.Search;
 import org.infinispan.commons.configuration.XMLStringConfiguration;
+import org.infinispan.query.dsl.QueryFactory;
 
 import io.quarkus.runtime.StartupEvent;
 
@@ -29,9 +32,9 @@ import io.quarkus.runtime.StartupEvent;
 @Path("/infinispan")
 public class InfinispanResource {
 
-    // Posso injetar, mas como estou criando o cache no onStart, fica null
-    // @Inject @Remote("myCache")
-    // RemoteCache<String, String> cache;
+    RemoteCache<String, String> cache;
+
+    RemoteCache<String, Livro> cacheLivro;
 
     @Inject
     RemoteCacheManager cacheManager;
@@ -41,25 +44,23 @@ public class InfinispanResource {
           + "</distributed-cache>";
 
     void onStart(@Observes StartupEvent ev) {   
-        RemoteCache<Object, Object> cache = cacheManager.administration().getOrCreateCache("myCache",
+        this.cache = cacheManager.administration().getOrCreateCache("myCache",
                 new XMLStringConfiguration(String.format(CACHE_CONFIG, "myCache")));    
         cache.addClientListener(new InfinispanListener());
+
+        this.cacheLivro = cacheManager.administration().getOrCreateCache("myCacheLivro",
+                new XMLStringConfiguration(String.format(CACHE_CONFIG, "myCacheLivro")));
+
+        this.cacheLivro.put("1", new Livro("Titulo 1", "Descricao Legal", 1985));
+
+        this.cacheLivro.put("2", new Livro("Titulo 2", "Descricao Legal", 1990));
     }
+
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     public String hello(@QueryParam("key")String key) {
-        //Query
-        // QueryFactory queryFactory = Search.getQueryFactory(cache);
-        // String query = "SELECT nome FROM com.redhat.Teste ";
-        // List<String> resultado = queryFactory.<String>create(query).execute().list();
-        
-        //ContinuousQuery
-        // ContinuousQueryListener<String, String> listener = null;
-        // //Notificacoes de elementos que fazem match com a query foram, Criados, Atualizados ou Removidos
-        // Search.getContinuousQuery(cache).addContinuousQueryListener("SELECT nome FROM com.redhat.Teste where idade > :idadeMinima", listener);;
         
         //Exemplo de put com expiracao
-        RemoteCache<String, String> cache = cacheManager.getCache("myCache");
         cache.put(key, "value", 10, TimeUnit.SECONDS);
 
         int nextInt = new Random().nextInt();
@@ -68,5 +69,23 @@ public class InfinispanResource {
 
         //Exemplo de get simples
         return "Hello RESTEasy: "+cache.get(key);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("search")
+    public List<Livro> search(@QueryParam("ano") Integer ano) {
+
+ //ContinuousQuery
+        // ContinuousQueryListener<String, String> listener = null;
+        // //Notificacoes de elementos que fazem match com a query foram, Criados, Atualizados ou Removidos
+        // Search.getContinuousQuery(cache).addContinuousQueryListener("SELECT nome FROM com.redhat.Teste where idade > :idadeMinima", listener);;
+       
+
+        //Query
+        QueryFactory queryFactory = Search.getQueryFactory(cacheLivro);
+        String query = "SELECT titulo FROM nome_pacote.Livro where anoPublicacao = :ano";
+        List<Livro> resultado = queryFactory.<Livro>create(query).setParameter("ano", ano).execute().list();
+        return resultado;
     }
 }
