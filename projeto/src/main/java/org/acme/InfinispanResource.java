@@ -61,7 +61,7 @@ public class InfinispanResource {
     public String hello(@QueryParam("key")String key) {
         
         //Exemplo de put com expiracao
-        cache.put(key, "value", 10, TimeUnit.SECONDS);
+        cache.put(key, "Valor Inserido", 10, TimeUnit.SECONDS);
 
         int nextInt = new Random().nextInt();
         //Exemplo de put simples
