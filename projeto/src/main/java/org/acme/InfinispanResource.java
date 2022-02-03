@@ -51,7 +51,12 @@ public class InfinispanResource {
         this.cacheLivro = cacheManager.administration().getOrCreateCache("myCacheLivro",
                 new XMLStringConfiguration(String.format(CACHE_CONFIG, "myCacheLivro")));
 
-        this.cacheLivro.put("1", new Livro("Titulo 1", "Descricao Legal", 1985));
+        this.cacheLivro.put("1", new Livro(
+            "Titulo 1", 
+            "Descricao Legal", 
+            1985
+            )
+        );
 
         this.cacheLivro.put("2", new Livro("Titulo 2", "Descricao Legal", 1990));
     }
@@ -84,7 +89,7 @@ public class InfinispanResource {
 
         //Query
         QueryFactory queryFactory = Search.getQueryFactory(cacheLivro);
-        String query = "SELECT titulo FROM nome_pacote.Livro where anoPublicacao = :ano";
+        String query = "FROM nome_pacote.Livro where anoPublicacao = :ano";
         List<Livro> resultado = queryFactory.<Livro>create(query).setParameter("ano", ano).execute().list();
         return resultado;
     }
